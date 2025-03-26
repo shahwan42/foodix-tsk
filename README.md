@@ -1,66 +1,129 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Foodix Task
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Notes for the reviewer
 
-## About Laravel
+- I've implemented some advanced concepts that could be considered an overkill for this simple task but I wanted to demonstrate how it would look like working in an environment where good practices are encouraged.
+- However this task has been done over iterations, I only pushed one commit titled **"The Task"**, to make the reviewing process easy. Please review it directly from [the commits page](https://github.com/shahwan42/foodix-tsk/commits/main/).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Install/Run The Project
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### pre-requisites
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Docker
+- [Laravel sail](https://laravel.com/docs/12.x/sail)
 
-## Learning Laravel
+### run the project
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- In the project directory, run `sail up`
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### run the tests
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- `sail test --filter="OrderControllerTest"`
 
-## Laravel Sponsors
+### create an order
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- run migrations `sail artisan migrate`
+- seed the database `sail artisan db:seed`
+- make a request
 
-### Premium Partners
+```cURL
+curl --location 'laravel.test/api/orders' \
+--header 'Accept: application/json' \
+--header 'Content-Type: application/json' \
+--data '{
+    "products":[
+        {
+            "product_id": 1,
+            "quantity": 3
+        },
+        {
+            "product_id": 2,
+            "quantity": 2
+        }
+    ]
+}'
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Example Response
 
-## Contributing
+```JSON
+{
+    "message": "Order created successfully",
+    "result": {
+        "updated_at": "2025-03-29T17:56:49.000000Z",
+        "created_at": "2025-03-29T17:56:49.000000Z",
+        "id": 3,
+        "order_items": [
+            {
+                "id": 3,
+                "order_id": 3,
+                "product_id": 1,
+                "quantity": 3,
+                "created_at": "2025-03-29T17:56:49.000000Z",
+                "updated_at": "2025-03-29T17:56:49.000000Z"
+            },
+            {
+                "id": 4,
+                "order_id": 3,
+                "product_id": 2,
+                "quantity": 2,
+                "created_at": "2025-03-29T17:56:49.000000Z",
+                "updated_at": "2025-03-29T17:56:49.000000Z"
+            }
+        ]
+    }
+}
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### trigger ingredient alert
 
-## Code of Conduct
+- create an order with product_id=1 & quantity=40
+- run `sail artisan queue:work --queue=high`
+- open mailpit in the browser `http://localhost:8025`
+- email example:
+![email example](./mailpit_email_example.png)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Design
 
-## Security Vulnerabilities
+### db design (some attrs are assumed/omitted)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+orders  -> order representation
 
-## License
+- no extra fields
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+order_items    -> (order lines) representation for each product/quantity in the order
+
+- order_id: -> FK to Order
+- product_id: -> FK to Product
+- quantity:int -> quantity of Product
+
+products    -> product representation
+
+- name:str
+
+ingredient_product:pivot    -> each product's ingredients and how much needed
+
+- ingredient_id: -> FK to Ingredient
+- product_id: -> FK to Product
+- ingredient_weight:int -> weight (in grams) of ingredient composing the product
+
+ingredients     -> ingredient representation
+
+- name:str
+- inventory_level:int  -> maximum capacity inventory can hold for the ingredient in grams
+- alert_sent_at:datetime|null -> flag to know whether to send email notification for below 50% ingredient
+
+ingredient_inventory_histories -> entries to record inventory changes
+
+- ingredient_id: -> FK to Ingredient
+- event:enum('add','subtract') -> determines whether the inventory of the ingredient is added-to or subtracted from
+- weight: amount of grams added/subtracted
+
+### Flowchart
+
+![flowchart](flowchart.png)
+
+### Improvements (Didn't have time to)
+
+- Use Backed Enums (string) instead of constants
+- Refactor Helpers in tests into a Trait for reusability
